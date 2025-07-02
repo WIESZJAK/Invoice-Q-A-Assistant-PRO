@@ -1,0 +1,14 @@
+streamlit==1.36.0
+easyocr==1.7.1
+opencv-python==4.8.1
+Pillow==10.0.1
+numpy==1.26.0
+langchain-huggingface==0.0.3
+langchain-community==0.2.7
+faiss-cpu==1.7.4
+transformers==4.44.0
+torch==2.0.1
+sqlite3
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.1
+langdetect==1.0.9
