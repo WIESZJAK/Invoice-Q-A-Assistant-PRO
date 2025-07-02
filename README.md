@@ -1,5 +1,7 @@
 # Invoice Q&A Assistant PRO
 
+![Simulator Demo](demo.gif)
+
 ## Overview
 Invoice Q&A Assistant PRO is a Streamlit-based web application designed to extract text from uploaded invoice images (PNG, JPG, JPEG) and answer user queries about the content using advanced OCR, text processing, and question-answering capabilities. The application leverages EasyOCR for text extraction, HuggingFace for embeddings and QA models, and FAISS for efficient vector-based search. It includes robust logging, database storage for interactions, and editable outputs for user corrections, making it ideal for professional and enterprise use cases.
 
