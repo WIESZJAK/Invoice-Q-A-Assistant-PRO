@@ -81,7 +81,7 @@ See `requirements.txt` for the full list.
 Contributions are welcome! Please submit a pull request or open an issue for suggestions, bug reports, or feature requests.
 
 ## License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+See the `LICENSE` file for details.
 
 ## Contact
 For inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com) or open an issue on GitHub.
