@@ -17,7 +17,6 @@ from fuzzywuzzy import fuzz, process
 from transformers import pipeline
 import torch
 
-# Setup logging
 logging.basicConfig(level=logging.INFO, filename='rag_pipeline.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 debug_logger = logging.getLogger('debug')
@@ -26,11 +25,9 @@ debug_handler.setLevel(logging.DEBUG)
 debug_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 debug_logger.addHandler(debug_handler)
 
-# Initialize QA model once
 qa_model = pipeline("question-answering", model="deepset/bert-base-cased-squad2", device=0 if torch.cuda.is_available() else -1)
 debug_logger.debug(f"QA model initialized on device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
 
-# Initialize EasyOCR reader
 try:
     reader = easyocr.Reader(['en', 'pl'])
 except Exception as e:
@@ -38,10 +35,8 @@ except Exception as e:
     logger.error(f"EasyOCR init error: {e}")
     st.stop()
 
-# Database setup
 conn = sqlite3.connect("logs.db")
 cursor = conn.cursor()
-# Corrected CREATE TABLE statement
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS interactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +67,6 @@ cursor.execute("""
 """)
 conn.commit()
 
-# Enhanced OCR corrections from database
 def correct_ocr_errors(text):
     cursor.execute("SELECT wrong, correct FROM ocr_corrections")
     corrections = dict(cursor.fetchall())
@@ -81,7 +75,6 @@ def correct_ocr_errors(text):
     text = re.sub(r'(\d+)\s+(\d+)', r'\1\2', text)
     return text
 
-# Image preprocessing with adjusted parameters
 def preprocess_image(img):
     try:
         if img.mode == 'RGBA':
@@ -103,7 +96,6 @@ def preprocess_image(img):
         logger.error(f"Image preprocessing error: {e}")
         return img.convert('L')
 
-# Extract text with progress bar and live preview
 def extract_text_from_image(path):
     try:
         img = Image.open(path)
@@ -118,7 +110,7 @@ def extract_text_from_image(path):
         debug_logger.debug(f"OCR result: {result}")
         
         rows = {}
-        tolerance = 35  # Increased for better tabular grouping
+        tolerance = 35  
         for item in result:
             if len(item) == 2:
                 bbox, text = item
@@ -144,7 +136,6 @@ def extract_text_from_image(path):
         logger.error(f"OCR error: {e}")
         return "", []
 
-# Format and clean text
 def format_text(text):
     lines = text.split('\n')
     formatted_lines = []
@@ -156,7 +147,6 @@ def format_text(text):
                 formatted_lines.append(" ".join(parts))
     return "\n".join(formatted_lines)
 
-# Chunk text with dynamic delimiters
 def get_vectorstore(text):
     try:
         if not text or len(text.strip()) < 10:
@@ -178,7 +168,6 @@ def get_vectorstore(text):
         logger.error(f"Vector store error: {e}")
         return None, text
 
-# Fuzzy matching for questions
 def fuzzy_match(query, lines, threshold=80):
     corrected_query = query
     for word in query.split():
@@ -188,7 +177,6 @@ def fuzzy_match(query, lines, threshold=80):
     debug_logger.debug(f"Fuzzy match: '{query}' -> '{corrected_query}'")
     return corrected_query.lower()
 
-# Extract answer with improved context handling
 def extract_answer(text, question, lang):
     debug_logger.debug(f"Starting answer extraction for question: {question}")
     context = text
@@ -197,16 +185,13 @@ def extract_answer(text, question, lang):
     lines = text.split('\n')
     cursor.execute("SELECT delimiter FROM delimiters")
     delimiters = [row[0] for row in cursor.fetchall()]
-    # Prioritize high-priority chunks based on delimiters, avoid index error
     chunk_lines = get_vectorstore(text)[1].split('\n')
     relevant_context = "\n".join(line for line in lines if any(d.lower() in line.lower() for d in delimiters) and any('100%' in cl for cl in chunk_lines))
     if not relevant_context and any(d.lower() in corrected_question.lower() for d in delimiters):
-        # Extract first token from highest priority chunk if delimiter-related
         chunks = get_vectorstore(text)[1].split('\n')
         for chunk in chunks:
             if '100%' in chunk and any(d.lower() in chunk.lower() for d in delimiters):
-                answer = chunk.split()[0]  # Take first word
-                # Look for price pattern if delimiter suggests it, fix $ vs 8
+                answer = chunk.split()[0]
                 if any(d.lower() in ['price', 'total', 'amount'] for d in delimiters):
                     price_match = re.search(r'(?:8|\$)\d{1,3}(?:,\d{3})*(?:\.\d{2})?', text)
                     if price_match:
@@ -215,7 +200,7 @@ def extract_answer(text, question, lang):
                             answer = '$' + amount[1:] if amount[1:].replace(',', '').isdigit() else amount
                         else:
                             answer = amount
-                return answer, 0.9  # High confidence for direct extraction
+                return answer, 0.9 
     relevant_context = relevant_context if relevant_context else context
     result = qa_model(question=corrected_question, context=relevant_context)
     answer = result['answer'] if result['score'] > 0.1 else "Not found"
@@ -223,7 +208,6 @@ def extract_answer(text, question, lang):
     debug_logger.debug(f"QA result: answer={answer}, score={confidence}")
     return answer.strip(), min(confidence, 0.95)
 
-# Streamlit app
 st.set_page_config(page_title="Invoice Q&A Assistant PRO", layout="wide")
 st.title("📄 Invoice Q&A Assistant (PRO Version)")
 
@@ -276,7 +260,6 @@ if uploaded_file and submit_button:
 
     os.unlink(tmp_path)
 
-# Editable areas
 if st.session_state.text:
     st.subheader("Editable Outputs")
     col1, col2 = st.columns(2)
@@ -300,7 +283,6 @@ if st.session_state.text:
         conn.commit()
         st.success("Corrections submitted successfully!")
 
-# View Logs
 if st.button("View Logs"):
     with open('rag_pipeline.log', 'r', encoding='utf-8', errors='replace') as log_file:
         logs = log_file.readlines()[-50:]
@@ -310,7 +292,6 @@ if st.session_state.possible_outcomes:
     st.subheader("ANSWER:")
     st.write(st.session_state.possible_outcomes)
 
-# Interaction History
 st.subheader("Interaction History")
 with st.expander("See Interaction History", expanded=False):
     cursor.execute("SELECT question, answer, confidence, timestamp FROM interactions ORDER BY timestamp DESC")
