@@ -82,6 +82,3 @@ Contributions are welcome! Please submit a pull request or open an issue for sug
 
 ## License
 See the `LICENSE` file for details.
-
-## Contact
-For inquiries, please reach out to [your-email@example.com](mailto:your-email@example.com) or open an issue on GitHub.
