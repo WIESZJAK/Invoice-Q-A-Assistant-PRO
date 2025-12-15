@@ -24,7 +24,7 @@ Invoice Q&A Assistant PRO is a Streamlit-based web application designed to extra
 ### Steps
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/invoice-qa-assistant-pro.git
+   git clone https://github.com/WIESZJAK/invoice-qa-assistant-pro.git
    cd invoice-qa-assistant-pro
    ```
 
